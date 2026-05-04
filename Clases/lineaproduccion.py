@@ -1,4 +1,4 @@
-from proceso import Proceso
+from .proceso import Proceso
 
 
 class LineaDeProduccion:
@@ -44,7 +44,7 @@ class LineaDeProduccion:
     def reinicializar(self):
         """Reinicia el estado de todas las tareas para volver a simular."""
         from collections import deque
-        from producto import Producto
+        from .producto import Producto
         Producto.reiniciar_contador()
         for proceso in self.procesos:
             for tarea in proceso.tareas:

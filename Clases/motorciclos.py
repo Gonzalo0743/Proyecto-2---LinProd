@@ -12,7 +12,7 @@ Soporta:
 import time
 import threading
 from typing import Callable, Optional
-from simulador import Simulador
+from .simulador import Simulador
 
 
 class MotorCiclos:

@@ -1,4 +1,4 @@
-from simulador import Simulador
+from .simulador import Simulador
 
 
 class Reporte:

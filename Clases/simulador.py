@@ -1,5 +1,5 @@
-from producto import Producto
-from lineaproduccion import LineaDeProduccion
+from .producto import Producto
+from .lineaproduccion import LineaDeProduccion
 
 
 class Simulador:
