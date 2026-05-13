@@ -108,12 +108,115 @@ class PantallaSimulacion:
 
         # Partículas
         for p in self.particulas:
-            alpha = int(p["vida"] * 255)
-            color = (*p["color"][:3], alpha)
             pygame.draw.circle(surf, p["color"], (int(p["x"]), int(p["y"])), p["r"])
+
+        # Overlay de pausa (encima de todo)
+        if self.motor.esta_pausado():
+            self._dibujar_overlay_pausa(surf)
 
         # Barra de control inferior
         self._dibujar_barra_control(surf)
+
+    def _dibujar_overlay_pausa(self, surf):
+        """Overlay semitransparente con snapshot completo del estado de la línea."""
+        # Fondo oscuro semitransparente
+        overlay = pygame.Surface((ANCHO, ALTO), pygame.SRCALPHA)
+        overlay.fill((0, 0, 0, 190))
+        surf.blit(overlay, (0, 0))
+
+        # Panel central
+        PW, PH = 860, ALTO - 100
+        px = (ANCHO - PW) // 2
+        py = 40
+        panel = pygame.Rect(px, py, PW, PH)
+        pygame.draw.rect(surf, (20, 24, 36), panel, border_radius=14)
+        pygame.draw.rect(surf, AMARILLO, panel, width=2, border_radius=14)
+
+        # Título del overlay
+        tit = self.f_sub.render(f"[||] PAUSADO — Ciclo {self.sim.ciclo_actual}", True, AMARILLO)
+        surf.blit(tit, tit.get_rect(centerx=ANCHO // 2, y=py + 14))
+
+        # Resumen global
+        total       = max(1, len(self.sim.productos))
+        completados = len(self.sim.productos_completados)
+        en_cola_ent = len(self.sim.cola_entrada)
+        en_linea    = total - completados - en_cola_ent
+        resumen = (f"Completados: {completados}/{total}   "
+                   f"En línea: {en_linea}   "
+                   f"Por entrar: {en_cola_ent}")
+        rs = self.f_norm.render(resumen, True, BLANCO)
+        surf.blit(rs, rs.get_rect(centerx=ANCHO // 2, y=py + 42))
+
+        pygame.draw.line(surf, PANEL_BORDE,
+                         (px + 20, py + 68), (px + PW - 20, py + 68), 1)
+
+        # Tabla de procesos y tareas
+        cy = py + 78
+        for proc in self.sim.linea.procesos:
+            if cy + 20 > py + PH - 30:
+                break
+
+            # Encabezado de proceso
+            if proc.es_inicial:
+                col_proc = COLOR_INICIAL
+            elif proc.es_final:
+                col_proc = COLOR_FINAL
+            else:
+                col_proc = COLOR_NORMAL
+
+            flags = ""
+            if proc.es_inicial: flags += " [INICIAL]"
+            if proc.es_final:   flags += " [FINAL]"
+            ph = self.f_norm.render(f"▶  {proc.nombre}{flags}", True, col_proc)
+            surf.blit(ph, (px + 24, cy))
+            cy += 22
+
+            # Filas de tareas
+            for tarea in proc.tareas:
+                if cy + 18 > py + PH - 30:
+                    break
+
+                # Color de estado
+                if tarea.esta_procesando:
+                    col_est = ACENTO2
+                    estado  = f"procesando #{tarea.producto_actual.id}  ({tarea.ciclos_restantes}c restantes)"
+                elif tarea.cola:
+                    col_est = AMARILLO
+                    estado  = f"libre — {len(tarea.cola)} en cola"
+                else:
+                    col_est = GRIS_CLR
+                    estado  = "libre"
+
+                # Nombre tarea
+                tn = self.f_small.render(f"    • {tarea.nombre}", True, BLANCO)
+                surf.blit(tn, (px + 24, cy))
+
+                # Tiempo ciclo
+                tc = self.f_small.render(f"ciclo={tarea.tiempo_ciclo}c", True, GRIS_CLR)
+                surf.blit(tc, (px + 230, cy))
+
+                # Estado
+                ts = self.f_small.render(estado, True, col_est)
+                surf.blit(ts, (px + 320, cy))
+
+                # Cola
+                if tarea.cola:
+                    ids = ", ".join(f"#{p.id}" for p in list(tarea.cola)[:6])
+                    dots = "…" if len(tarea.cola) > 6 else ""
+                    cq = self.f_small.render(f"cola: [{ids}{dots}]", True, AMARILLO)
+                    surf.blit(cq, (px + 600, cy))
+
+                cy += 19
+
+            # Separador entre procesos
+            cy += 6
+            pygame.draw.line(surf, PANEL_BORDE,
+                             (px + 20, cy), (px + PW - 20, cy), 1)
+            cy += 8
+
+        # Instrucción de reanudación
+        hint = self.f_small.render("Presiona  [>] Reanudar  para continuar", True, GRIS_CLR)
+        surf.blit(hint, hint.get_rect(centerx=ANCHO // 2, y=py + PH - 22))
 
     def _dibujar_header(self, surf):
         # Fondo header
