@@ -27,21 +27,45 @@ class PantallaReporte:
 
         self.on_reiniciar   = None
         self.on_nueva_linea = None
+        self._export_msg    = ""
+        self._export_timer  = 0
 
         self._build_ui()
 
     def _build_ui(self):
         y = ALTO - 65
-        self.btn_reiniciar = Boton((40,  y, 250, 44), "[R] Reinicializar (misma linea)",
+        self.btn_reiniciar = Boton((40,  y, 230, 44), "[R] Reinicializar (misma linea)",
                                    color=COLOR_NORMAL, color_texto=BLANCO)
-        self.btn_nueva     = Boton((310, y, 180, 44), "[+] Nueva linea",
+        self.btn_nueva     = Boton((280, y, 160, 44), "[+] Nueva linea",
                                    color=ACENTO, color_texto=NEGRO)
-        self.btn_reiniciar.on_click = lambda: self.on_reiniciar   and self.on_reiniciar()
-        self.btn_nueva.on_click     = lambda: self.on_nueva_linea and self.on_nueva_linea()
+        self.btn_exportar  = Boton((450, y, 160, 44), "[E] Exportar .txt",
+                                   color=ACENTO2, color_texto=NEGRO)
+        self.btn_exportar_csv = Boton((620, y, 160, 44), "[C] Exportar .csv",
+                                      color=(0, 170, 160), color_texto=NEGRO)
+        self.btn_reiniciar.on_click    = lambda: self.on_reiniciar   and self.on_reiniciar()
+        self.btn_nueva.on_click        = lambda: self.on_nueva_linea and self.on_nueva_linea()
+        self.btn_exportar.on_click     = self._exportar_txt
+        self.btn_exportar_csv.on_click = self._exportar_csv
+
+    def _exportar_txt(self):
+        ruta = self.rep.exportar("reporte_linprod.txt")
+        self._export_msg   = f"Exportado: {ruta}"
+        self._export_timer = 4000
+
+    def _exportar_csv(self):
+        ruta = self.rep.exportar("reporte_linprod.csv")
+        self._export_msg   = f"Exportado: {ruta}"
+        self._export_timer = 4000
 
     def handle(self, event):
         self.btn_reiniciar.handle(event)
         self.btn_nueva.handle(event)
+        self.btn_exportar.handle(event)
+        self.btn_exportar_csv.handle(event)
+
+    def update(self, dt):
+        if self._export_timer > 0:
+            self._export_timer -= dt
 
     def update(self, dt):
         pass
@@ -63,15 +87,16 @@ class PantallaReporte:
 
         # Tarjetas de metricas
         metricas = [
-            ("Productos completados", f"{d['productos_completados']} / {d['total_productos']}",  VERDE),
-            ("Ciclos totales",        str(d["ciclos_totales"]),                                  ACENTO2),
-            ("1er producto",          f"{d['tiempo_primer_producto']} ciclos",                   AMARILLO),
-            ("Ultimo producto",       f"{d['tiempo_ultimo_producto']} ciclos",                   AMARILLO),
-            ("Tiempo promedio",       f"{d['tiempo_promedio']} ciclos",                          ACENTO),
-            ("Espera promedio",       f"{d['promedio_espera_global']} ciclos",                   GRIS_CLR),
+            ("Productos completados", f"{d['productos_completados']} / {d['total_productos']}",     VERDE),
+            ("Ciclos totales",        str(d["ciclos_totales"]),                                     ACENTO2),
+            ("1er producto",          f"{d['tiempo_primer_producto']} ciclos",                      AMARILLO),
+            ("Ultimo producto",       f"{d['tiempo_ultimo_producto']} ciclos",                      AMARILLO),
+            ("Tiempo promedio",       f"{d['tiempo_promedio']} ciclos",                             ACENTO),
+            ("Espera promedio",       f"{d['promedio_espera_global']} ciclos",                      GRIS_CLR),
+            ("Tiempo total proc.",    f"{d.get('tiempo_total_procesamiento', '—')} ciclos",         VERDE),
         ]
 
-        COLS = 3
+        COLS = 4
         CW   = (ANCHO - 60) // COLS
         CH   = 90
         for idx, (titulo, valor, color) in enumerate(metricas):
@@ -129,3 +154,9 @@ class PantallaReporte:
         pygame.draw.line(surf, PANEL_BORDE, (0, ALTO - 70), (ANCHO, ALTO - 70), 1)
         self.btn_reiniciar.draw(surf, self.f_norm)
         self.btn_nueva.draw(surf, self.f_norm)
+        self.btn_exportar.draw(surf, self.f_norm)
+        self.btn_exportar_csv.draw(surf, self.f_norm)
+
+        if self._export_timer > 0:
+            msg = self.f_small.render(self._export_msg, True, VERDE)
+            surf.blit(msg, (800, ALTO - 45))
