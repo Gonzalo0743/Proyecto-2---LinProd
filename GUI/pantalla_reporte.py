@@ -34,7 +34,7 @@ class PantallaReporte:
 
     def _build_ui(self):
         y = ALTO - 65
-        self.btn_reiniciar = Boton((40,  y, 230, 44), "[R] Reinicializar (misma linea)",
+        self.btn_reiniciar = Boton((40,  y, 230, 44), "[R] Reinicializar",
                                    color=COLOR_NORMAL, color_texto=BLANCO)
         self.btn_nueva     = Boton((280, y, 160, 44), "[+] Nueva linea",
                                    color=ACENTO, color_texto=NEGRO)
